@@ -1,8 +1,19 @@
 import requests
+from requests.auth import HTTPBasicAuth
+from datetime import datetime, timedelta
 
 # Query the web monitoring API to get random links
 # Integer -> List
 def query_webmondb():
+	# Set user and pass as environmental variables from command line
+	#api = 'https://api.monitoring.envirodatagov.org/api/v0/versions?chunk_size=1000'
+	#response = requests.get(api, auth=HTTPBasicAuth('user', 'pass'))
+	#response = response.json()
+
+	#fileoutput = open("api_pages.txt", "w")
+	#fileoutput.write('API Response content: \n')
+	#fileoutput.write(str(response.content))
+	#fileoutput.close()
 	links = [
 		'epa.gov',
 		'energy.gov',
@@ -24,17 +35,35 @@ def query_wayback(url):
 # JSON Object -> DateTime Object
 def get_time(response):
 	time = response['archived_snapshots']['closest']['timestamp']
+	time = str_to_datetime(time)
 	return time
+
+# Convert Wayback time to datetime object
+# Str -> Datetime
+def str_to_datetime(str):
+	pydatetime = datetime.strptime(str, '%Y%m%d%H%M%S')
+	return pydatetime
+
+# Convert str to datetime hr object
+# Str -> Datetime
+def str_to_datetime_hr(str):
+	pydatetime = datetime.strptime(str, '%H')
+	return pydatetime
 
 # Check to see latest time is within the time limit
 # Int, DateTime -> Boolean
 def check_time(time_limit, time):
+	time = get_time(time)
+	if (datetime.now() - time)  < time_limit:
+		status = [True,datetime.now(),time]
+	else:
+		status = [False,datetime.now(),time]
 	return status
 
 # Take Respones from Wayback and determine if the IA has recent snapshots
 # Dict -> None
 def is_healthy(responses):
-	link_health = [get_time(response) for response in responses]
+	link_health = [check_time(time_check, response) for response in responses]
 	output_file(link_health)
 	return	
 
@@ -59,6 +88,7 @@ def output_email():
 # Get the random list of links from the Web Monitoring DB
 # Get the responses of the links from the Wayback URL
 # Check to see if the responses are within the time limit and write the output
+time_check = timedelta(hours=72)
 links = query_webmondb()
 responses = [query_wayback(url) for url in links]
 is_healthy(responses)
