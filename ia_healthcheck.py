@@ -1,19 +1,31 @@
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
+import os
+
+
+MAX_CAPTURE_AGE = timedelta(hours=72)
+SCANNER_USER = os.environ['SCANNER_USER']
+SCANNER_PASSWORD = os.environ['SCANNER_PASSWORD']
 
 # Query the web monitoring API to get random links
 # Integer -> List
 def query_webmondb():
-	# Set user and pass as environmental variables from command line
-	#api = 'https://api.monitoring.envirodatagov.org/api/v0/versions?chunk_size=1000'
-	#response = requests.get(api, auth=HTTPBasicAuth('user', 'pass'))
-	#response = response.json()
+	"""
+	Set user and pass as environmental variables from command line
+	For MacOS: in the terminal:
+	export SCANNER_USER="your API user name"
+	export SCANNER_PASSWORD="your API password"
+	"""
+	api = 'https://api.monitoring.envirodatagov.org/api/v0/pages?chunk_size=1'
+	response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
+	response = response.json()
 
-	#fileoutput = open("api_pages.txt", "w")
-	#fileoutput.write('API Response content: \n')
-	#fileoutput.write(str(response.content))
-	#fileoutput.close()
+	print(response)
+	#	fileoutput = open("api_pages.txt", "w")
+	#	fileoutput.write('API Response content: \n')
+	#	fileoutput.write(str(response.content))
+	#	fileoutput.close()	
 	links = [
 		'epa.gov',
 		'energy.gov',
@@ -23,75 +35,74 @@ def query_webmondb():
 	]	
 	return links
 
-# Query Wayback Machine
-# String -> JSON Object 
 def query_wayback(url):
+	"""
+	Query Wayback Machine
+	String -> JSON Object
+	""" 
 	url = 'http://archive.org/wayback/available?url=%s' % url
 	response = requests.get(url)
 	response = response.json()
 	return response
 
-# Get the timestamp from the Wayback URL JSON Object
-# JSON Object -> DateTime Object
+
 def get_time(response):
+	"""
+	Get the timestamp from the Wayback URL JSON Object
+	Convert Wayback time to datetime object
+	JSON Object -> DateTime Object
+	"""
 	time = response['archived_snapshots']['closest']['timestamp']
-	time = str_to_datetime(time)
-	return time
+	return datetime.strptime(time, '%Y%m%d%H%M%S')
 
-# Convert Wayback time to datetime object
-# Str -> Datetime
-def str_to_datetime(str):
-	pydatetime = datetime.strptime(str, '%Y%m%d%H%M%S')
-	return pydatetime
+def check_time(time_limit, response):
+	"""
+	Check to see latest time is within the time limit
+	Int, DateTime -> Boolean
+	"""
+	time = get_time(response)
+	status = (datetime.now() - time)  < time_limit
+	return {'Status': status, 'Response': response, 'Current Time': datetime.now(), 'Last Capture': time}
 
-# Convert str to datetime hr object
-# Str -> Datetime
-def str_to_datetime_hr(str):
-	pydatetime = datetime.strptime(str, '%H')
-	return pydatetime
-
-# Check to see latest time is within the time limit
-# Int, DateTime -> Boolean
-def check_time(time_limit, time):
-	time = get_time(time)
-	if (datetime.now() - time)  < time_limit:
-		status = [True,datetime.now(),time]
-	else:
-		status = [False,datetime.now(),time]
-	return status
-
-# Take Respones from Wayback and determine if the IA has recent snapshots
-# Dict -> None
 def is_healthy(responses):
-	link_health = [check_time(time_check, response) for response in responses]
+	"""
+	Take Respones from Wayback and determine if the IA has recent snapshots
+	Dict -> None
+	"""
+	link_health = [check_time(MAX_CAPTURE_AGE, response) for response in responses]
 	output_file(link_health)
 	return	
 
-# Write Output to a Text file
-# List -> None
+
 def output_file(responses):
+	"""
+	Write Output to a Text file
+	List -> None
+	"""
 	fileoutput = open("ia_healthcheck.txt", "w")
 
 	for url in responses:
-		fileoutput.write('\n URL: \n')
-		fileoutput.write(str(url))		
+		fileoutput.write(str(url)+'\n\n\n')		
 
 	fileoutput.close()
 
 	return
 
-# Send Output to and Email
-# List -> None
+
 def output_email():
+	"""
+	Send Output to and Email
+	List -> None
+	"""
 	return
 
 # Get the random list of links from the Web Monitoring DB
 # Get the responses of the links from the Wayback URL
 # Check to see if the responses are within the time limit and write the output
-time_check = timedelta(hours=72)
-links = query_webmondb()
-responses = [query_wayback(url) for url in links]
-is_healthy(responses)
+if  __name__ == "__main__":
+	links = query_webmondb()
+	responses = [query_wayback(url) for url in links]
+	is_healthy(responses)
 
 
 
