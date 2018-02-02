@@ -2,38 +2,42 @@ import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
 import os
-
+import random
 
 MAX_CAPTURE_AGE = timedelta(hours=72)
+LINKS_TO_CHECK = 5
 SCANNER_USER = os.environ['SCANNER_USER']
 SCANNER_PASSWORD = os.environ['SCANNER_PASSWORD']
 
-# Query the web monitoring API to get random links
-# Integer -> List
 def query_webmondb():
 	"""
 	Set user and pass as environmental variables from command line
 	For MacOS: in the terminal:
 	export SCANNER_USER="your API user name"
 	export SCANNER_PASSWORD="your API password"
+	Query the web monitoring API to get random links
+	Integer -> List
 	"""
 	api = 'https://api.monitoring.envirodatagov.org/api/v0/pages?chunk_size=1'
 	response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
 	response = response.json()
+	url_count = response['meta']['total_results']
+	links = [query_webmondb_url(number) for number in random.sample(range(url_count),LINKS_TO_CHECK)]
 
-	print(response)
-	#	fileoutput = open("api_pages.txt", "w")
-	#	fileoutput.write('API Response content: \n')
-	#	fileoutput.write(str(response.content))
-	#	fileoutput.close()	
-	links = [
-		'epa.gov',
-		'energy.gov',
-		'doi.gov',
-		'usda.gov',
-		'noaa.gov'
-	]	
 	return links
+
+def query_webmondb_url(number):
+	"""
+	Take an integer and query the web-mon-api to retreive a url based on n urls.
+	The integer is the chunk number of chunk_size of 1.   
+	Int -> Str
+	"""
+
+	api = 'https://api.monitoring.envirodatagov.org/api/v0/pages?chunk='+str(number)+'&chunk_size=1'
+	response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
+	response = response.json()
+	return response['data'][0]['url']
+
 
 def query_wayback(url):
 	"""
@@ -80,10 +84,14 @@ def output_file(responses):
 	List -> None
 	"""
 	fileoutput = open("ia_healthcheck.txt", "w")
-
+	healthy_links = 0
+	unhealthy_links = 0
 	for url in responses:
 		fileoutput.write(str(url)+'\n\n\n')		
-
+		if url['Status'] == True:
+			healthy_links += 1
+		else: unhealthy_links +=1
+	fileoutput.write('Found: {} Healthy Links and {} Unhealthy Links.'.format(healthy_links,unhealthy_links))	
 	fileoutput.close()
 
 	return
