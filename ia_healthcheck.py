@@ -20,12 +20,17 @@ def query_webmondb():
     Integer -> List
     """
     api = 'https://api.monitoring.envirodatagov.org/api/v0/pages?chunk_size=1'
-    response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
-    response = response.json()
-    url_count = response['meta']['total_results']
-    links = [query_webmondb_url(number) for number in random.sample(range(url_count),LINKS_TO_CHECK)]
-
-    return links
+    try:
+        response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
+    except Exception as e:
+        print('Could not access Scanner API')
+        print(e)
+        return []
+    else:    
+        response = response.json()
+        url_count = response['meta']['total_results']
+        links = [query_webmondb_url(number) for number in random.sample(range(url_count),LINKS_TO_CHECK)]
+        return links
 
 def query_webmondb_url(number):
     """
@@ -36,9 +41,10 @@ def query_webmondb_url(number):
     api = 'https://api.monitoring.envirodatagov.org/api/v0/pages?chunk='+str(number)+'&chunk_size=1'
     try:
         response = requests.get(api, auth=HTTPBasicAuth(SCANNER_USER, SCANNER_PASSWORD))
-    except:
-        print("Could not access Scanner API")
-        sys.exit(0)
+    except Exception as e:
+        print('Could not access Scanner API with link: %d' % number)
+        print(e)
+        return None
     else:
         response = response.json()
         return response['data'][0]['url']     
@@ -66,10 +72,10 @@ def get_time(response):
     """
     try:
         time = response['archived_snapshots']['closest']['timestamp']
-    except:
+    except KeyError:
     	print("Could not unpack response")
     	print(response)
-    	sys.exit(0)
+    	return None
 
     else:
     	return datetime.strptime(time, '%Y%m%d%H%M%S')
@@ -80,7 +86,10 @@ def check_time(time_limit, response):
     Int, DateTime -> Boolean
     """
     time = get_time(response)
-    status = (datetime.now() - time)  < time_limit
+    if not time:
+        status = False
+    else:
+        status = (datetime.now() - time)  < time_limit
     return {'Status': status, 'Response': response, 'Current Time': datetime.now(), 'Last Capture': time}
 
 def is_healthy(responses):
@@ -100,12 +109,16 @@ def output_file(responses):
     fileoutput = open("ia_healthcheck.txt", "w")
     healthy_links = 0
     unhealthy_links = 0
-    for url in responses:
-        fileoutput.write(str(url)+'\n\n\n')		
-        if url['Status'] == True:
-            healthy_links += 1
-        else: unhealthy_links +=1
-    fileoutput.write('Found: {} Healthy Links and {} Unhealthy Links.'.format(healthy_links,unhealthy_links))	
+    
+    if not responses:
+        fileoutput.write('No links were returned.')
+    else:    
+        for url in responses:
+            fileoutput.write(str(url)+'\n\n\n')		
+            if url['Status'] == True:
+                healthy_links += 1
+            else: unhealthy_links +=1
+        fileoutput.write('Found: {} Healthy Links and {} Unhealthy Links.'.format(healthy_links,unhealthy_links))	
     fileoutput.close()
     return
 
@@ -122,7 +135,7 @@ def output_email():
 # Check to see if the responses are within the time limit and write the output
 if __name__ == "__main__":
     links = query_webmondb()
-    responses = [query_wayback(url) for url in links]
+    responses = [query_wayback(url) for url in links if url]
     is_healthy(responses)
 
 
