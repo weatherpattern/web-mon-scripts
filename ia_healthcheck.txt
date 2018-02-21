@@ -1,0 +1,16 @@
+{'Status': False, 'Response': {'url': 'https://science.energy.gov/bes/mse/principal-investigators-meetings/', 'archived_snapshots': {'closest': {'status': '200', 'available': True, 'url': 'http://web.archive.org/web/20171201103229/https://science.energy.gov/bes/mse/principal-investigators-meetings/', 'timestamp': '20171201103229'}}}, 'Current Time': datetime.datetime(2018, 2, 14, 13, 11, 2, 161181), 'Last Capture': datetime.datetime(2017, 12, 1, 10, 32, 29)}
+
+
+{'Status': False, 'Response': {'url': 'https://www.usgs.gov/science/science-explorer?lq=ecological competition', 'archived_snapshots': {}}, 'Current Time': datetime.datetime(2018, 2, 14, 13, 11, 2, 161234), 'Last Capture': None}
+
+
+{'Status': False, 'Response': {'url': 'https://www.epa.gov/aboutepa/epa-region-1-new-england', 'archived_snapshots': {'closest': {'status': '200', 'available': True, 'url': 'http://web.archive.org/web/20171228211310/https://www.epa.gov/aboutepa/epa-region-1-new-england', 'timestamp': '20171228211310'}}}, 'Current Time': datetime.datetime(2018, 2, 14, 13, 11, 2, 161268), 'Last Capture': datetime.datetime(2017, 12, 28, 21, 13, 10)}
+
+
+{'Status': True, 'Response': {'url': 'https://energy.gov/oe/articles/furthering-understanding-and-management-risks-associated-electromagnetic-pulses', 'archived_snapshots': {'closest': {'status': '200', 'available': True, 'url': 'http://web.archive.org/web/20180213144603/https://energy.gov/oe/articles/furthering-understanding-and-management-risks-associated-electromagnetic-pulses', 'timestamp': '20180213144603'}}}, 'Current Time': datetime.datetime(2018, 2, 14, 13, 11, 2, 161292), 'Last Capture': datetime.datetime(2018, 2, 13, 14, 46, 3)}
+
+
+{'Status': True, 'Response': {'url': 'https://energy.gov/eere/bioenergy/downloads/international-bioenergy-trade', 'archived_snapshots': {'closest': {'status': '200', 'available': True, 'url': 'http://web.archive.org/web/20180213172728/https://energy.gov/eere/bioenergy/downloads/international-bioenergy-trade', 'timestamp': '20180213172728'}}}, 'Current Time': datetime.datetime(2018, 2, 14, 13, 11, 2, 161324), 'Last Capture': datetime.datetime(2018, 2, 13, 17, 27, 28)}
+
+
+Found: 2 Healthy Links and 3 Unhealthy Links.
